@@ -1,0 +1,34 @@
+name: Lint
+
+on:
+  pull_request:
+  push:
+    paths-ignore:
+    - '**.md'
+    - 'tools/*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      matrix:
+        emacs_version:
+          - 29.1
+          - 29.2
+          - 29.3
+          - release-snapshot
+        experimental: [false]
+        include:
+          - emacs_version: snapshot
+            experimental: true
+    env:
+      EMACS_LINT_IGNORE: ${{ matrix.lint_ignore }}
+    steps:
+    - uses: purcell/setup-emacs@master
+      with:
+        version: ${{ matrix.emacs_version }}
+
+    - uses: actions/checkout@v4
+    - name: Run Linter
+      run: './scripts/lint.sh'
