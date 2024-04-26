@@ -42,14 +42,19 @@
   "Create a shell command string adjusted for the stored project directory."
   (with-slots (project-root) ui
     (let* ((expanded-root (expand-file-name project-root))  ; Ensure path is expanded.
-           (full-command (concat "cd " (shell-quote-argument expanded-root) " && " command)))
-      full-command)))
+            (full-command (concat "cd " (shell-quote-argument expanded-root) " && "
+                            epry-prefix-command
+                            "ruby --version" " && "
+                            epry-prefix-command
+                            command)))
+      ;(message "Executing command: %s" full-command)
+     full-command)))
 
 (cl-defmethod epry-run-command ((ui epry-ui) command)
   "Execute a COMMAND using the shell specified in `epry-shell-path` with output in the appropriate buffer."
   (with-slots (buffer) ui
     (let ((output-buffer (get-buffer-create buffer))
-          (process-command (list epry-shell-path "-c" (epry-create-command ui command))))
+          (process-command (list epry-shell-path "-l" "-c" (epry-create-command ui command))))
       (with-current-buffer output-buffer
         ;; Ensure buffer is writable
         (let ((inhibit-read-only t))

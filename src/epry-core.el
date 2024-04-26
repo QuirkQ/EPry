@@ -17,8 +17,13 @@
   :prefix "epry-"
   :group 'applications)
 
-(defcustom epry-shell-path "/bin/bash"
+(defcustom epry-shell-path "/opt/homebrew/bin/fish" ; "/bin/bash"
   "Path to the shell used by EPry for executing commands."
+  :type 'string
+  :group 'epry)
+
+(defcustom epry-prefix-command "mise x -- " ; ""
+  "Prefix command because we run in a non-interactive shell."
   :type 'string
   :group 'epry)
 
@@ -51,17 +56,34 @@
     (switch-to-buffer-other-window (oref ui buffer))
     ui)) ; Ensure that the UI instance is returned
 
-(defun epry-execute-command ()
-  "Prompt for a command, execute it in the context of the current or new EPry session."
+(defun epry-execute-command (&optional command)
+  "Prompt for a command, or use the provided COMMAND, and execute it in the context of the current or new EPry session."
   (interactive)
-  (let* ((command (read-from-minibuffer "Command: "))
-         (ui (if (and (derived-mode-p 'epry-mode) (bound-and-true-p epry-current-ui))
-                 epry-current-ui  ; Use the existing UI instance if available
-               (epry-start)  ; Otherwise, start a new session
-               )))
+  ;; If no command is provided, prompt the user for one
+  (unless command
+    (setq command (read-from-minibuffer "Command: ")))
+
+  (let ((ui (if (and (derived-mode-p 'epry-mode) (bound-and-true-p epry-current-ui))
+                epry-current-ui  ; Use the existing UI instance if available
+              (epry-start))))  ; Otherwise, start a new session
     ;; Only run the command if ui is correctly set and we're in the right mode
     (when (and ui (derived-mode-p 'epry-mode))
       (epry-run-command ui command))))
+
+(defun epry-bundle-install ()
+  "Run 'bundle install' in the context of the current or new EPry session."
+  (interactive)
+  (epry-execute-command "bundle install"))
+
+(defun epry-test ()
+  "Run 'bundle exec rspec' in the context of the current or new EPry session."
+  (interactive)
+  (epry-execute-command "bundle exec rspec"))
+
+(defun epry-rails ()
+  "Run 'bundle exec rails s' in the context of the current or new EPry session."
+  (interactive)
+  (epry-execute-command "bundle exec rails s"))
 
 (defun pprint-epry-sessions ()
   "Pretty-print all entries in the `epry-sessions` hash table to a dedicated buffer."

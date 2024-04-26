@@ -33,7 +33,7 @@
   (require 'epry-core))
 
 ;; Call the function to load all files when Epry is started
-(epry-load-files)
+;(epry-load-files)
 
 (provide 'epry)
 ;;; epry.el ends here
