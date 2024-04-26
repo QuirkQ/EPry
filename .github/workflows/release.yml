@@ -1,0 +1,21 @@
+name: 🚀 Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: release-please
+        id: release
+        uses: google-github-actions/release-please-action@v3
+        with:
+          command: manifest
