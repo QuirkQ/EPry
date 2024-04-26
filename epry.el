@@ -42,13 +42,13 @@
 
 (defun epry-project-root ()
   "Return the root directory of the project."
-  (or
+  (expand-file-name (or
    ;; Try to find the Git root via VC first
    (vc-root-dir)
    ;; Fallback to projectile if vc-root-dir is not available or fails
    (and (featurep 'projectile) (projectile-project-root))
    ;; Default to the current directory if no method works
-    default-directory))
+    default-directory)))
 
 (defvar epry-sessions (make-hash-table :test 'equal)
   "Hash table storing epry-ui instances keyed by their project root.")
@@ -75,6 +75,24 @@
         (epry-run-command ui command)))
     (switch-to-buffer-other-window (oref ui buffer))
     ui)) ; Ensure that the UI instance is returned
+
+(defun epry-cleanup-session (project-root)
+  "Remove the session associated with PROJECT-ROOT from the epry-sessions hash table."
+  (interactive "Project Root: ")
+  (if (gethash project-root epry-sessions)
+      (progn
+        (remhash project-root epry-sessions)
+        (message "Successfully removed session for project root: %s" project-root))
+    (message "No session found for project root: %s" project-root)))
+
+(defun epry-cleanup-sessions ()
+  "Remove all entries from epry-sessions where the associated buffer has been killed."
+  (interactive)
+  (maphash (lambda (root ui)
+             (let ((buffer (oref ui buffer)))
+               (when (not (buffer-live-p buffer))
+                 (remhash root epry-sessions))))
+           epry-sessions))
 
 (defun epry-execute-command (&optional command)
   "Prompt for a command, or use the provided COMMAND, and execute it in the context of the current or new EPry session."
@@ -141,6 +159,9 @@
     (setq buffer (get-buffer-create (format "*EPry* - %s" (file-name-nondirectory (directory-file-name project-root)))))
     (with-current-buffer buffer
       (setq-local epry-current-ui ui)
+      (add-hook 'kill-buffer-hook
+                (lambda () (epry-cleanup-session project-root))
+                nil t)
       (epry-mode))
     (setq window (display-buffer buffer))))
 
