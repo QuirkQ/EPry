@@ -1,0 +1,34 @@
+name: 🚀 Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: release-please
+        id: release-please
+        uses: google-github-actions/release-please-action@v3
+        with:
+          command: manifest
+
+      - if: ${{ steps.release-please.outputs.release_created == 'true' }}
+        uses: actions/checkout@v4
+
+      - if: ${{ steps.release-please.outputs.release_created == 'true' }}
+        name: Update version in epry.el
+        run: |
+          NEW_VERSION=$(echo ${{ steps.release-please.outputs.release_version }})
+          sed -i "s/;;; Version: .*/;;; Version: $NEW_VERSION/" ./epry.el
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -am "chore: bump version to $NEW_VERSION"
+          git push

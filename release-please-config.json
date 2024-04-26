@@ -1,4 +1,11 @@
 {
+  "bump-minor-pre-major": true,
+  "bump-patch-for-minor-pre-major": true,
+  "prerelease-type": "pre",
   "package-name": "EPry",
-  "release-type": "simple"
+  "release-type": "simple",
+  "packages": {
+    ".": {
+    }
+  }
 }
