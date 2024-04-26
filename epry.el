@@ -13,15 +13,24 @@
 ;;;
 ;;; Code:
 
-;; Ensure eieio is loaded for OOP features
 (require 'eieio)
+(require 'cl-lib)
+(require 'ruby-mode)
+(require 'ansi-color)
 
 ;; epry root directory.
 (defvar epry-dir (file-name-directory load-file-name))
 
+;; Add src directory to load-path
+(let ((src-dir (expand-file-name "src" epry-dir)))
+  (add-to-list 'load-path src-dir))
+
 (defun epry-load-files ()
   "Load all the necessary files for the Epry package."
-  (interactive))
+  (interactive)
+  (require 'epry-ui)
+  (require 'epry-mode)
+  (require 'epry-core))
 
 ;; Call the function to load all files when Epry is started
 (epry-load-files)
