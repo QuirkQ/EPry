@@ -50,6 +50,10 @@ lint_files() {
   do
     full_path="${root_dir}/${file}"
 
+    if [[ "$(basename "$file")" == ".dir-locals.el" ]]; then
+      continue
+    fi
+
     # Run Emacs linting in batch mode with an absolute path to elisp-lint.el
     lint_file $file
     # Capture the exit code

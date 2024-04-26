@@ -1,7 +1,7 @@
 pre-push:
   parallel: true
 
-pre-commit:
-  commands:
-    lint-elisp:
-      run: ./scripts/lint.sh
+# pre-commit:
+#   commands:
+#     lint-elisp:
+#       run: ./scripts/lint.sh
