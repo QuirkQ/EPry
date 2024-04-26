@@ -181,7 +181,5 @@
                                     (with-current-buffer (process-buffer proc)
                                       (setq buffer-read-only t))))))))))
 
-
-
 (provide 'epry)
 ;;; epry.el ends here
