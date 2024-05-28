@@ -63,12 +63,21 @@
 (defvar epry-sessions (make-hash-table :test 'equal)
   "Hash table storing epry-ui instances keyed by their project root.")
 
+(defvar epry-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-c C-c") 'epry-kill-process)
+    (define-key map (kbd "<f19> i") 'epry-bundle-install)
+    (define-key map (kbd "<f19> o") 'epry-rails)
+    (define-key map (kbd "<f19> p") 'epry-test)
+    map)
+  "Keymap for `epry-mode`.")
+
 (define-derived-mode epry-mode fundamental-mode "Epry"
   "Major mode for the epry debugger interface."
   (defvar-local epry-current-ui nil "Local instance of the epry-ui class.")
   (setq buffer-read-only t)
-  ;; (setq-local buffer-save-without-query t)
-  (display-line-numbers-mode -1))
+  (display-line-numbers-mode -1)
+  :keymap epry-mode-map)
 
 (defun epry-auto-scroll ()
   "Automatically scroll to the bottom of the buffer."
@@ -228,7 +237,10 @@
                                     (let ((inhibit-read-only t))
                                       (goto-char (point-max))
                                       (insert (ansi-color-apply string))
-                                      (epry-auto-scroll)))))))
+                                      (epry-auto-scroll)
+                                      ;; Check for the specific line
+                                      (when (string-match "DEBUGGER: wait for debugger connection..." string)
+                                        (epry-debugger-attach ui))))))))
           (set-process-sentinel process
                                 (lambda (proc event)
                                   (when (string-match-p "\\`finished" event)
@@ -271,6 +283,26 @@
             (copy-file original-gemfile-lock epry-gemfile-lock t)
             (message "Created EPRy Gemfile.lock at: %s" epry-gemfile-lock)))))))
 
+(cl-defmethod epry-debugger-attach ((ui epry-ui))
+  "Open a vterm and attach to the Ruby debugger."
+  (if (featurep 'multi-vterm)
+      (with-slots (project-root) ui
+        (multi-vterm-project)
+        (vterm-send-string (concat "cd " project-root))
+        (vterm-send-return)
+        (vterm-send-string "rdbg --attach")
+        (vterm-send-return))
+    (message "multi-vterm is not available.")))
+
+(cl-defmethod epry-debugger-attach ((ui epry-ui))
+  "Open a vterm and attach to the Ruby debugger."
+  (with-slots (project-root) ui
+    (multi-vterm-project)
+    (vterm-send-string (concat "cd " project-root))
+    (vterm-send-return)
+    (vterm-send-string "rdbg --attach")
+    (vterm-send-return)))
+
 (defun epry-setup-project-gemfile ()
   "Setup project Gemfile and Gemfile.lock using the EPry UI."
   (interactive)
@@ -282,6 +314,18 @@
   "Inserts the Ruby debug statement defined by `epry-debug-statement` at the current cursor position."
   (interactive)
   (insert epry-debug-statement))
+
+(defun epry-kill-process ()
+  "Kill the process running in the current EPry buffer."
+  (interactive)
+  (let ((ui (epry-get-or-create-ui)))
+    (when ui
+      (let ((buffer (oref ui buffer)))
+        (with-current-buffer buffer
+          (let ((process (get-buffer-process buffer)))
+            (when process
+              (kill-process process)
+              (message "Killed process %s" process))))))))
 
 (provide 'epry)
 ;;; epry.el ends here
