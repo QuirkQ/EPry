@@ -61,11 +61,8 @@
 (defun epry-project-root ()
   "Return the root directory of the project."
   (expand-file-name (or
-                     ;; Try to find the Git root via VC first.
                      (vc-root-dir)
-                     ;; Fallback to projectile if vc-root-dir is not available or fails.
                      (and (featurep 'projectile) (projectile-project-root))
-                     ;; Default to the current directory if no method works.
                      default-directory)))
 
 (defvar epry-sessions (make-hash-table :test 'equal)
@@ -102,17 +99,17 @@
   "Start EPry by initializing the UI and displaying it, optionally running a COMMAND."
   (interactive)
   (let* ((root (epry-project-root))
-         (ui (or (gethash root epry-sessions)  ; Check for an existing session first.
-                 (let ((new-ui (epry-ui :project-root root)))  ; Create and initialize new UI.
+         (ui (or (gethash root epry-sessions)
+                 (let ((new-ui (epry-ui :project-root root)))
                    (epry-ui-init new-ui)
                    (puthash root new-ui epry-sessions)
                    new-ui))))
     (with-current-buffer (oref ui buffer)
       (setq-local epry-current-ui ui)
-      (when command  ; If a command is provided, run it.
+      (when command
         (epry-run-command ui command)))
     (switch-to-buffer-other-window (oref ui buffer))
-    ui))  ; Ensure that the UI instance is returned.
+    ui))
 
 (defun epry-cleanup-session (project-root)
   "Remove the session associated with PROJECT-ROOT from the epry-sessions hash table."
@@ -135,8 +132,8 @@
 (defun epry-get-or-create-ui ()
   "Get or create an `epry-ui` instance depending on the current context."
   (if (and (derived-mode-p 'epry-mode) (bound-and-true-p epry-current-ui))
-      epry-current-ui  ; Return the existing UI if already present and correct mode.
-    (epry-start)))  ; Start a new UI session if not present.
+      epry-current-ui
+    (epry-start)))
 
 (defun epry-execute-command (&optional command callback)
   "Prompt for a command, or use the provided COMMAND,
@@ -203,9 +200,7 @@ Optionally, run CALLBACK after the command finishes."
 (cl-defmethod epry-ui-init ((ui epry-ui))
   "Initialize the EPry UI: create the buffer based on the project root and set up the window."
   (with-slots (buffer window project-root) ui
-    ;; Determine the project root and store it in the instance.
     (setf project-root (expand-file-name (epry-project-root)))
-    ;; Set the buffer name to include the project directory name.
     (setq buffer (get-buffer-create (format "*EPry* - %s" (file-name-nondirectory (directory-file-name project-root)))))
     (with-current-buffer buffer
       (setq-local epry-current-ui ui)
@@ -218,11 +213,11 @@ Optionally, run CALLBACK after the command finishes."
 (cl-defmethod epry-create-command ((ui epry-ui) command)
   "Create a shell command string adjusted for the stored project directory."
   (with-slots (project-root) ui
-    (let* ((expanded-root (expand-file-name project-root))  ; Ensure path is expanded.
-           (epry-gemfile (expand-file-name epry-gemfile-name project-root))  ; Path to the epry Gemfile.
+    (let* ((expanded-root (expand-file-name project-root))
+           (epry-gemfile (expand-file-name epry-gemfile-name project-root))
            (bundle-gemfile-setting (if (file-exists-p epry-gemfile)
                                        (concat "BUNDLE_GEMFILE=" (shell-quote-argument epry-gemfile) " ")
-                                     ""))  ; Set BUNDLE_GEMFILE if the file exists.
+                                     ""))
            (full-command (concat "cd " (shell-quote-argument expanded-root) " && "
                                  epry-prefix-command
                                  "ruby --version" " && "
@@ -239,10 +234,8 @@ Optionally, run CALLBACK after the command finishes."
     (let ((output-buffer (get-buffer-create buffer))
           (process-command (list epry-shell-path "-l" "-c" (epry-create-command ui command))))
       (with-current-buffer output-buffer
-        ;; Ensure buffer is writable.
         (let ((inhibit-read-only t))
-          (erase-buffer))  ; Clear previous contents.
-        ;; Start the process.
+          (erase-buffer))
         (make-process
          :name "epry-command-process"
          :buffer output-buffer
@@ -272,18 +265,14 @@ Optionally, run CALLBACK after the command finishes."
   (with-slots (project-root) ui
     (let ((original-gemfile (expand-file-name (epry-get-project-gemfile-name ui) project-root))
           (epry-gemfile (expand-file-name epry-gemfile-name project-root)))
-      ;; Check if the original Gemfile exists.
       (if (not (file-exists-p original-gemfile))
           (message "No Gemfile found in the project root: %s" project-root)
         (progn
-          ;; Create the new epry-gemfile with eval_gemfile.
           (with-temp-file epry-gemfile
             (insert (format "# EPry generated Gemfile\n\n"))
             (insert (format "eval_gemfile '%s'\n\n" (file-name-nondirectory original-gemfile)))
-            ;; Append the gem "debug" line directly.
             (insert "gem 'debug', '>= 1.0.0'\n"))
           (message "Created EPRy Gemfile at: %s" epry-gemfile)
-          ;; Copy the original Gemfile.lock if it exists.
           (let ((original-gemfile-lock (expand-file-name (concat (epry-get-project-gemfile-name ui) ".lock") project-root))
                 (epry-gemfile-lock (expand-file-name (concat epry-gemfile-name ".lock") project-root)))
             (when (file-exists-p original-gemfile-lock)
@@ -305,14 +294,12 @@ Optionally, run CALLBACK after the command finishes."
             (with-temp-buffer
               (insert-file-contents epry-gemfile-lock)
               (goto-char (point-min))
-              ;; Print the contents of the buffer for debugging.
               (message "Contents of epry-gemfile-lock:\n%s" (buffer-string))
-              (let ((case-fold-search nil))  ; Make the search case-sensitive.
+              (let ((case-fold-search nil))
                 (while (search-forward original-url nil t)
                   (message "Found a match for original-url at position %d" (point))
                   (replace-match new-url)))
-              (write-region (point-min) (point-max) epry-gemfile-lock)
-              (message "Updated epry-gemfile-lock with the new URL.")))
+              (write-region (point-min) (point-max) epry-gemfile-lock)))
         (message "epry-gemfile-lock file does not exist.")))))
 
 (cl-defmethod epry-debugger-attach ((ui epry-ui))
