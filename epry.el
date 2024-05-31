@@ -1,7 +1,7 @@
 ;;; epry.el --- Emacs Pry debugger interface -*- lexical-binding: t -*-
 ;;;
 ;;; Author: QuirkQ
-;;; Version: 1.0.0
+;;; Version: 1.1.0
 ;;; URL: https://github.com/quirkq/epry
 ;;; Package-Requires: ((emacs "29.1"))
 ;;; Keywords: tools, ruby
