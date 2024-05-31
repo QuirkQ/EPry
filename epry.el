@@ -96,7 +96,7 @@
           (recenter -1))))))
 
 (defun epry-start (&optional command)
-  "Start EPry by initializing the UI and displaying it, optionally running a COMMAND."
+  "Start EPry by initializing the UI, optionally running a COMMAND."
   (interactive)
   (let* ((root (epry-project-root))
          (ui (or (gethash root epry-sessions)
@@ -112,7 +112,7 @@
     ui))
 
 (defun epry-cleanup-session (project-root)
-  "Remove the session associated with PROJECT-ROOT from the epry-sessions hash table."
+  "Remove the session associated with PROJECT-ROOT from epry-sessions."
   (interactive "Project Root: ")
   (if (gethash project-root epry-sessions)
       (progn
@@ -121,7 +121,7 @@
     (message "No session found for project root: %s" project-root)))
 
 (defun epry-cleanup-sessions ()
-  "Remove all entries from epry-sessions where the associated buffer has been killed."
+  "Remove all epry-sessions where the associated buffer has been killed."
   (interactive)
   (maphash (lambda (root ui)
              (let ((buffer (oref ui buffer)))
@@ -136,9 +136,7 @@
     (epry-start)))
 
 (defun epry-execute-command (&optional command callback)
-  "Prompt for a command, or use the provided COMMAND,
-and execute it in the context of the current or new EPry session.
-Optionally, run CALLBACK after the command finishes."
+  "Run a COMMAND in a EPry session with optional CALLBACK function."
   (interactive)
   (let ((ui (epry-get-or-create-ui)))
     (unless command
@@ -149,7 +147,7 @@ Optionally, run CALLBACK after the command finishes."
       (epry-run-command ui command callback))))
 
 (defun epry-bundle-install ()
-  "Run 'bundle install' in the context of the current or new EPry session."
+  "Run \='bundle install\=' in a EPry session."
   (interactive)
   (epry-setup-project-gemfile)
   (let ((ui (epry-get-or-create-ui)))
@@ -157,17 +155,17 @@ Optionally, run CALLBACK after the command finishes."
       (epry-run-command ui "bundle install" #'epry-update-gemfile-lock))))
 
 (defun epry-test ()
-  "Run 'bundle exec rspec' in the context of the current or new EPry session."
+  "Run \='bundle exec rspec\=' in a EPry session."
   (interactive)
   (epry-execute-command "bundle exec rspec"))
 
 (defun epry-rails ()
-  "Run 'bundle exec rails s' in the context of the current or new EPry session."
+  "Run \='bundle exec rails s\=' in a EPry session."
   (interactive)
   (epry-execute-command "bundle exec rails s"))
 
 (defun epry-pprint-sessions ()
-  "Pretty-print all entries in the `epry-sessions` hash table to a dedicated buffer."
+  "Pretty-print the `epry-sessions` hash table to a dedicated buffer."
   (interactive)
   (let ((output-buffer (get-buffer-create "*EPry-Sessions*")))
     (with-current-buffer output-buffer
@@ -198,7 +196,7 @@ Optionally, run CALLBACK after the command finishes."
   "Class representing the UI for EPry.")
 
 (cl-defmethod epry-ui-init ((ui epry-ui))
-  "Initialize the EPry UI: create the buffer based on the project root and set up the window."
+  "Initialize the EPry UI: create the buffer based on the project root."
   (with-slots (buffer window project-root) ui
     (setf project-root (expand-file-name (epry-project-root)))
     (setq buffer (get-buffer-create (format "*EPry* - %s"
@@ -213,7 +211,7 @@ Optionally, run CALLBACK after the command finishes."
     (setq window (display-buffer buffer))))
 
 (cl-defmethod epry-create-command ((ui epry-ui) command)
-  "Create a shell command string adjusted for the stored project directory."
+  "Create a shell COMMAND string adjusted for the UI stored project directory."
   (with-slots (project-root) ui
     (let* ((expanded-root (expand-file-name project-root))
            (epry-gemfile (expand-file-name epry-gemfile-name project-root))
@@ -231,8 +229,7 @@ Optionally, run CALLBACK after the command finishes."
       full-command)))
 
 (cl-defmethod epry-run-command ((ui epry-ui) command &optional callback)
-  "Execute a COMMAND using the shell specified in `epry-shell-path` with output in the appropriate buffer.
-Optionally, run CALLBACK after the command finishes."
+  "Execute a COMMAND in UI and optionally, run CALLBACK after the command finishes."
   (with-slots (buffer) ui
     (let ((output-buffer (get-buffer-create buffer))
           (process-command (list epry-shell-path "-l" "-c"
@@ -260,14 +257,14 @@ Optionally, run CALLBACK after the command finishes."
                        (when callback
                          (funcall callback ui)))))))))
 
-(cl-defmethod epry-get-project-gemfile-name ((ui epry-ui))
-  "Return the name of the Gemfile based on the BUNDLE_GEMFILE environment variable or default to 'Gemfile'."
+(defun epry-get-project-gemfile-name ()
+  "Return the name of the Gemfile based on BUNDLE_GEMFILE or default to 'Gemfile'."
   (or (getenv "BUNDLE_GEMFILE") "Gemfile"))
 
 (cl-defmethod epry-create-project-gemfile ((ui epry-ui))
-  "Create an EPRy Gemfile and its corresponding Gemfile.lock in the project root."
+  "Create EPRy Gemfile and Gemfile.lock in the UI project root."
   (with-slots (project-root) ui
-    (let ((original-gemfile (expand-file-name (epry-get-project-gemfile-name ui)
+    (let ((original-gemfile (expand-file-name (epry-get-project-gemfile-name)
                                               project-root))
           (epry-gemfile (expand-file-name epry-gemfile-name project-root)))
       (if (not (file-exists-p original-gemfile))
@@ -279,7 +276,7 @@ Optionally, run CALLBACK after the command finishes."
                             (file-name-nondirectory original-gemfile)))
             (insert "gem 'debug', '>= 1.0.0'\n"))
           (message "Created EPRy Gemfile at: %s" epry-gemfile)
-          (let ((original-gemfile-lock (expand-file-name (concat (epry-get-project-gemfile-name ui)
+          (let ((original-gemfile-lock (expand-file-name (concat (epry-get-project-gemfile-name)
                                                                  ".lock")
                                                          project-root))
                 (epry-gemfile-lock (expand-file-name (concat epry-gemfile-name ".lock")
@@ -289,7 +286,7 @@ Optionally, run CALLBACK after the command finishes."
               (message "Created EPRy Gemfile.lock at: %s" epry-gemfile-lock))))))))
 
 (cl-defmethod epry-update-gemfile-lock ((ui epry-ui))
-  "Update the epry-gemfile-lock to replace the remote URL with the token URL."
+  "Update the UI epry-gemfile-lock to replace the remote URL with the new URL."
   (with-slots (project-root) ui
     (let* ((epry-gemfile-lock (expand-file-name (concat epry-gemfile-name ".lock")
                                                 project-root))
@@ -308,7 +305,7 @@ Optionally, run CALLBACK after the command finishes."
         (message "epry-gemfile-lock file does not exist.")))))
 
 (cl-defmethod epry-debugger-attach ((ui epry-ui))
-  "Open a vterm and attach to the Ruby debugger."
+  "Open a vterm and attach to the Ruby debugger of the UI project."
   (if (featurep 'multi-vterm)
       (with-slots (project-root) ui
         (multi-vterm-project)
@@ -318,15 +315,6 @@ Optionally, run CALLBACK after the command finishes."
         (vterm-send-return))
     (message "multi-vterm is not available.")))
 
-(cl-defmethod epry-debugger-attach ((ui epry-ui))
-  "Open a vterm and attach to the Ruby debugger."
-  (with-slots (project-root) ui
-    (multi-vterm-project)
-    (vterm-send-string (concat "cd " project-root))
-    (vterm-send-return)
-    (vterm-send-string "rdbg --attach")
-    (vterm-send-return)))
-
 (defun epry-setup-project-gemfile ()
   "Setup project Gemfile and Gemfile.lock using the EPry UI."
   (interactive)
@@ -335,8 +323,7 @@ Optionally, run CALLBACK after the command finishes."
       (epry-create-project-gemfile ui))))
 
 (defun epry-insert-ruby-debug-statement ()
-  "Insert the Ruby debug statement defined by `epry-debug-statement`
-at the current cursor position."
+  "Insert the `epry-debug-statement` at the current cursor position."
   (interactive)
   (insert epry-debug-statement))
 
