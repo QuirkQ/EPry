@@ -30,5 +30,8 @@ jobs:
         version: ${{ matrix.emacs_version }}
 
     - uses: actions/checkout@v4
-    - name: Run Linter
-      run: './scripts/lint.sh'
+
+    - uses: leotaku/elisp-check@master
+      with:
+        file: epry.el
+        warnings_as_errors: true

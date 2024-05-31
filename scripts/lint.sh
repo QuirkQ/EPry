@@ -49,6 +49,7 @@ lint_files() {
   for file in $el_files
   do
     full_path="${root_dir}/${file}"
+    echo "linting: ${full_path}"
 
     if [[ "$(basename "$file")" == ".dir-locals.el" ]]; then
       continue
