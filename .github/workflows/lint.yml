@@ -34,3 +34,4 @@ jobs:
     - uses: leotaku/elisp-check@master
       with:
         file: epry.el
+        warnings_as_errors: true
