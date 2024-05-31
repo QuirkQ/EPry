@@ -91,7 +91,7 @@
     (define-key map (kbd "<f19> p") 'epry-test)
     (define-key map (kbd "<f19> l") 'epry-execute-command)
     map)
-  "Keymap for `epry-mode`.")
+  "Keymap for \='epry-mode\='.")
 
 (define-derived-mode epry-mode fundamental-mode "Epry"
   "Major mode for the epry debugger interface."
@@ -162,7 +162,7 @@
     epry-sessions))
 
 (defun epry-get-or-create-ui ()
-  "Get or create an `epry-ui` instance depending on the current context."
+  "Get or create an \='epry-ui\=' instance depending on the current context."
   (if (and (derived-mode-p 'epry-mode) (bound-and-true-p epry-current-ui))
       epry-current-ui
     (epry-start)))
@@ -197,7 +197,7 @@
   (epry-execute-command "bundle exec rails s"))
 
 (defun epry-pprint-sessions ()
-  "Pretty-print the `epry-sessions` hash table to a dedicated buffer."
+  "Pretty-print the \='epry-sessions\=' hash table to a dedicated buffer."
   (interactive)
   (let ((output-buffer (get-buffer-create "*EPry-Sessions*")))
     (with-current-buffer output-buffer
@@ -272,7 +272,7 @@
                          (funcall callback ui)))))))))
 
 (defun epry-get-project-gemfile-name ()
-  "Return the name of the Gemfile based on BUNDLE_GEMFILE or default to 'Gemfile'."
+  "The name of the Gemfile based on BUNDLE_GEMFILE or default to \='Gemfile\='."
   (or (getenv "BUNDLE_GEMFILE") "Gemfile"))
 
 (cl-defmethod epry-create-project-gemfile ((ui epry-ui))
@@ -337,7 +337,7 @@
       (epry-create-project-gemfile ui))))
 
 (defun epry-insert-ruby-debug-statement ()
-  "Insert the `epry-debug-statement` at the current cursor position."
+  "Insert the \='epry-debug-statement\=' at the current cursor position."
   (interactive)
   (insert epry-debug-statement))
 
