@@ -296,18 +296,13 @@ Optionally, run CALLBACK after the command finishes."
            (original-url (string-trim epry-original-url))
            (new-url (string-trim epry-new-url)))
       (message "Updating epry-gemfile-lock: %s" epry-gemfile-lock)
-      (message "Original URL: %s" original-url)
-      (message "New URL: %s" new-url)
       (if (file-exists-p epry-gemfile-lock)
           (progn
-            (message "epry-gemfile-lock file exists. Proceeding with update.")
             (with-temp-buffer
               (insert-file-contents epry-gemfile-lock)
               (goto-char (point-min))
-              (message "Contents of epry-gemfile-lock:\n%s" (buffer-string))
               (let ((case-fold-search nil))
                 (while (search-forward original-url nil t)
-                  (message "Found a match for original-url at position %d" (point))
                   (replace-match new-url)))
               (write-region (point-min) (point-max) epry-gemfile-lock)))
         (message "epry-gemfile-lock file does not exist.")))))
