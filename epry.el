@@ -1,4 +1,4 @@
-;;; epry.el --- Emacs Pry debugger interface -*- lexical-binding: t -*-
+;;; epry.el --- Emacs integration for Pry Ruby debugger -*- lexical-binding: t -*-
 ;;;
 ;;; Author: QuirkQ
 ;;; Version: 1.1.0
@@ -9,7 +9,16 @@
 ;;;
 ;;; Commentary:
 ;;;
-;;; This is the root file to require everything necessary for epry.
+;;; EPry is an Emacs interface for the Pry debugger, designed to enhance the Ruby
+;;; development experience by integrating powerful debugging capabilities directly
+;;; into your Emacs workflow.  This package provides seamless interaction with Pry
+;;; sessions, allowing you to execute commands, manage sessions, and debug Ruby
+;;; code more efficiently.
+;;;
+;;; This file contains the core definitions and functions necessary to set up and
+;;; use EPry.  It includes the main mode definition, customizations, key bindings,
+;;; and utility functions to interact with Pry sessions.  By loading this file,
+;;; all essential components required for EPry to function are initialized.
 ;;;
 ;;; Code:
 
@@ -17,6 +26,10 @@
 (require 'cl-lib)
 (require 'ruby-mode)
 (require 'ansi-color)
+
+(declare-function multi-vterm-project "ext:multi-vterm" ())
+(declare-function vterm-send-string "ext:vterm" (string))
+(declare-function vterm-send-return "ext:vterm" ())
 
 (defgroup epry nil
   "Customization group for EPry."
@@ -62,11 +75,13 @@
   "Return the root directory of the project."
   (expand-file-name
    (or (vc-root-dir)
-       (and (featurep 'projectile) (projectile-project-root))
        default-directory)))
 
 (defvar epry-sessions (make-hash-table :test 'equal)
   "Hash table storing epry-ui instances keyed by their project root.")
+
+(defvar-local epry-current-ui nil
+  "Local instance of the epry-ui class.")
 
 (defvar epry-mode-map
   (let ((map (make-sparse-keymap)))
@@ -80,10 +95,27 @@
 
 (define-derived-mode epry-mode fundamental-mode "Epry"
   "Major mode for the epry debugger interface."
-  (defvar-local epry-current-ui nil "Local instance of the epry-ui class.")
   (setq buffer-read-only t)
   (display-line-numbers-mode -1)
   :keymap epry-mode-map)
+
+(defclass epry-ui ()
+  ((buffer :initarg :buffer
+           :initform "*EPry*"
+           :type t
+           :documentation "The buffer associated with the EPry session.")
+   (window :initarg :window
+           :type t
+           :documentation "The window displaying the EPry buffer.")
+   (project-root :initarg :project-root
+                 :initform nil
+                 :type (or null string)
+                 :documentation "The root directory of the current project.")
+   (last-command :initarg :last-command
+                 :initform nil
+                 :type (or null string)
+                 :documentation "The last executed command in this session."))
+  "Class representing the UI for EPry.")
 
 (defun epry-auto-scroll ()
   "Automatically scroll to the bottom of the buffer."
@@ -176,24 +208,6 @@
                epry-sessions)
       (read-only-mode 1))
     (pop-to-buffer output-buffer)))
-
-(defclass epry-ui ()
-  ((buffer :initarg :buffer
-           :initform "*EPry*"
-           :type t
-           :documentation "The buffer associated with the EPry session.")
-   (window :initarg :window
-           :type t
-           :documentation "The window displaying the EPry buffer.")
-   (project-root :initarg :project-root
-                 :initform nil
-                 :type (or null string)
-                 :documentation "The root directory of the current project.")
-   (last-command :initarg :last-command
-                 :initform nil
-                 :type (or null string)
-                 :documentation "The last executed command in this session."))
-  "Class representing the UI for EPry.")
 
 (cl-defmethod epry-ui-init ((ui epry-ui))
   "Initialize the EPry UI: create the buffer based on the project root."
