@@ -78,10 +78,10 @@
        default-directory)))
 
 (defvar epry-sessions (make-hash-table :test 'equal)
-  "Hash table storing epry-ui instances keyed by their project root.")
+  "Hash table storing \='epry-ui\=' instances keyed by their project root.")
 
 (defvar-local epry-current-ui nil
-  "Local instance of the epry-ui class.")
+  "Local instance of the \='epry-ui\=' class.")
 
 (defvar epry-mode-map
   (let ((map (make-sparse-keymap)))
@@ -144,7 +144,7 @@
     ui))
 
 (defun epry-cleanup-session (project-root)
-  "Remove the session associated with PROJECT-ROOT from epry-sessions."
+  "Remove the session associated with PROJECT-ROOT from \='epry-sessions\='."
   (interactive "Project Root: ")
   (if (gethash project-root epry-sessions)
       (progn
@@ -153,7 +153,7 @@
     (message "No session found for project root: %s" project-root)))
 
 (defun epry-cleanup-sessions ()
-  "Remove all epry-sessions where the associated buffer has been killed."
+  "Remove all \='epry-sessions\=' where the associated buffer has been killed."
   (interactive)
   (maphash (lambda (root ui)
              (let ((buffer (oref ui buffer)))
