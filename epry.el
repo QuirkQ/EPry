@@ -56,7 +56,7 @@
   :type 'string
   :group 'epry)
 
-(defcustom epry-debug-statement "require 'debug/open'; DEBUGGER__.open #fixme"
+(defcustom epry-debug-statement "require 'pry-remote'; binding.remote_pry #fixme"
   "Ruby debug statement to insert."
   :type 'string
   :group 'epry)
@@ -261,7 +261,7 @@
                        (goto-char (point-max))
                        (insert (ansi-color-apply string))
                        (epry-auto-scroll)
-                       (when (string-match "DEBUGGER: wait for debugger connection..."
+                       (when (string-match ".*\\[pry-remote\\] Waiting for client on druby.*"
                                            string)
                          (epry-debugger-attach ui)))))
          :sentinel (lambda (proc event)
@@ -288,7 +288,7 @@
             (insert (format "# EPry generated Gemfile\n\n"))
             (insert (format "eval_gemfile '%s'\n\n"
                             (file-name-nondirectory original-gemfile)))
-            (insert "gem 'debug', '>= 1.0.0'\n"))
+            (insert "gem 'pry-remote', '>= 0.1.8'\n"))
           (message "Created EPRy Gemfile at: %s" epry-gemfile)
           (let ((original-gemfile-lock (expand-file-name (concat (epry-get-project-gemfile-name)
                                                                  ".lock")
@@ -325,7 +325,7 @@
         (multi-vterm-project)
         (vterm-send-string (concat "cd " project-root))
         (vterm-send-return)
-        (vterm-send-string "rdbg --attach")
+        (vterm-send-string "pry-remote")
         (vterm-send-return))
     (message "multi-vterm is not available.")))
 
