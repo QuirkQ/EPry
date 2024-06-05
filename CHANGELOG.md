@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/QuirkQ/EPry/compare/v1.1.0...v1.2.0) (2024-06-05)
+
+
+### Features
+
+* Use pry-remote gem ([#11](https://github.com/QuirkQ/EPry/issues/11)) ([12285b0](https://github.com/QuirkQ/EPry/commit/12285b05690832cd979941e7086112067b92083b))
+
 ## [1.1.0](https://github.com/QuirkQ/EPry/compare/v1.0.0...v1.1.0) (2024-05-31)
 
 
